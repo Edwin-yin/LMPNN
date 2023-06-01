@@ -4,7 +4,7 @@ import pandas as pd
 pd.options.display.float_format = '{:>5.2f}'.format
 
 import json
-
+from train_lmpnn import name2newlstr
 
 metrics = ['mrr', 'hit1', 'hit3', 'hit10']
 
@@ -12,7 +12,7 @@ Conjunction_queries = ['1p', '2p', '3p', '2i', '3i', 'pi', 'ip']
 Negation_queries = ['2in', '3in', 'inp', 'pin', 'pni']
 Disjunction_queries = ['2u', 'up']
 queries = Conjunction_queries + Disjunction_queries + Negation_queries
-
+new_queries = name2newlstr
 parser = argparse.ArgumentParser()
 parser.add_argument('--log_file', type=str, default='log/output.log')
 
@@ -41,7 +41,7 @@ def evaluation_to_tables(line, collect_metrics=metrics, verbose=True):
     data = defaultdict(list)
     for m in collect_metrics:
         data['metric'].append(m)
-        for k in queries:
+        for k in new_queries:  # TODO: queries should not from outside
             if k in line:
                 data[k].append(line[k][m] * 100)
         data['epoch'] = line['epoch']
@@ -75,5 +75,6 @@ if __name__ == "__main__":
     lines = read_log_lines(args.log_file)
     #df = aggregate_evaluations(lines, 'NN evaluate valid', collect_metrics=['mrr'])
     #print(df.to_string(col_space=5))
-    df = aggregate_evaluations(lines, 'NN evaluate test', collect_metrics=['mrr'])
-    print(df.to_markdown())
+    df = aggregate_evaluations(lines, 'evaluate test set', collect_metrics=['mrr'])
+    df.to_csv('logs.csv')
+    #print(df.to_markdown())
