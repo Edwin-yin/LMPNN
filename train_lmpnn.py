@@ -45,14 +45,14 @@ name2newlstr = {v: k for k, v in newlstr2name.items()}
 parser = argparse.ArgumentParser()
 
 # base environment
-parser.add_argument("--device", type=str, default="cuda:0")
+parser.add_argument("--device", type=str, default="cuda:1")
 parser.add_argument("--output_dir", type=str, default='log')
 
 # input task folder, defines knowledge graph, index, and formulas
-parser.add_argument("--task_folder", type=str, default='data/NELL-EFO1')
+parser.add_argument("--task_folder", type=str, default='data/NELL-EFO1-resample')
 parser.add_argument("--train_queries", action='append')
 parser.add_argument("--eval_queries", action='append')
-parser.add_argument("--batch_size", type=int, default=1024, help="batch size for training")
+parser.add_argument("--batch_size", type=int, default=512, help="batch size for training")
 parser.add_argument("--batch_size_eval_truth_value", type=int, default=1, help="batch size for evaluating the truth value")
 parser.add_argument("--batch_size_eval_dataloader", type=int, default=5000, help="batch size for evaluation")
 
@@ -66,7 +66,7 @@ parser.add_argument("--p", type=int, default=1)
 
 # optimization for the entire process
 parser.add_argument("--optimizer", type=str, default='AdamW')
-parser.add_argument("--epoch", type=int, default=100)
+parser.add_argument("--epoch", type=int, default=0)
 parser.add_argument("--learning_rate", type=float, default=1e-4)
 parser.add_argument("--weight_decay", type=float, default=1e-4)
 parser.add_argument("--noisy_sample_size", type=int, default=128)
@@ -83,7 +83,7 @@ parser.add_argument("--reasoning_optimizer", type=str, default='AdamW')
 
 # reasoner = gnn
 parser.add_argument("--num_layers", type=int, default=1)
-parser.add_argument("--hidden_dim", type=int, default=4096)
+parser.add_argument("--hidden_dim", type=int, default=8192)
 parser.add_argument("--eps", type=float, default=0.1)
 parser.add_argument("--depth_shift", type=int, default=0)
 parser.add_argument("--agg_func", type=str, default='sum')
@@ -383,7 +383,7 @@ if __name__ == "__main__":
         print("train queries", train_queries)
 
         train_dataloader = QueryAnsweringSeqDataLoader(
-            osp.join(args.task_folder, 'train-qaa.json'),
+            osp.join(args.task_folder, 'test_real_EFO1_qaa.json'),
             target_lstr=train_queries,
             batch_size=args.batch_size,
             shuffle=True,
@@ -396,7 +396,7 @@ if __name__ == "__main__":
 
         if args.checkpoint_path_lmpnn:
             print("loading lmpnn model from", args.checkpoint_path_lmpnn)
-            lgnn_layer.load_state_dict(torch.load(args.checkpoint_path_lmpnn), strict=True)
+            lgnn_layer.load_state_dict(torch.load(args.checkpoint_path_lmpnn, map_location=nbp.device), strict=True)
 
         lgnn_layer.to(nbp.device)
 
@@ -425,7 +425,7 @@ if __name__ == "__main__":
                 torch.save(lgnn_layer.state_dict(), last_name)
 
         if args.epoch == 0:
-            evaluate_by_nearest_search(e, f"NN evaluate validate set",
-                                        valid_dataloader, nbp, reasoner)
-            evaluate_by_nearest_search(e, f"NN evaluate test set ",
+            #evaluate_by_nearest_search(e, f"NN evaluate validate set",
+            #                            valid_dataloader, nbp, reasoner)
+            evaluate_by_nearest_search(0, f"NN evaluate test set ",
                                         test_dataloader, nbp, reasoner)
